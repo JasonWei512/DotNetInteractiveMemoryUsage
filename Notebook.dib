@@ -1,0 +1,67 @@
+#!csharp
+
+using System.Text.Json;
+using System.IO;
+
+record Post(
+    string Title,
+    string Url,
+    PostAuthor Author,
+    DateTime Date,
+    int CommentsCount,
+    IEnumerable<PostTag> Tags,
+    string Summary
+);
+
+record PostTag(
+    string Name,
+    string Url
+);
+
+record PostAuthor(
+    string Name,
+    string Url
+);
+
+List<Post> posts = JsonSerializer.Deserialize<List<Post>>(
+    await File.ReadAllTextAsync("DotNetBlog.json"),
+    new JsonSerializerOptions() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+#!csharp
+
+display("Tag Stat:");
+posts
+    .SelectMany(p => p.Tags)
+    .GroupBy(t => t)
+    .Select(g => new
+    {
+        TagName = g.Key.Name,
+        Count = g.Count(),
+        g.Key.Url
+    })
+    .OrderByDescending(t => t.Count)
+
+#!csharp
+
+display("Author Stat:");
+posts
+    .GroupBy(p => p.Author)
+    .Select(a => new
+    {
+        AuthorName = a.Key.Name,
+        Count = a.Count(),
+        a.Key.Url
+    })
+    .OrderByDescending(a => a.Count)
+
+#!csharp
+
+display("Comment Stat:");
+posts
+    .Select(p => new
+    {
+        PostTitle = p.Title,
+        p.CommentsCount,
+        p.Url
+    })
+    .OrderByDescending(p => p.CommentsCount)
